@@ -7,7 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"   # <-- your exact script filename
+  # Your exact script filename in the repo root:
+  SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"
+  # Final exe name:
   EXE_NAME: "BOM Creation Tool"
 
 jobs:
@@ -24,23 +26,30 @@ jobs:
           test -f "$SCRIPT_FILE" || (echo "Missing script: $SCRIPT_FILE" && exit 1)
           echo "Found script: $SCRIPT_FILE"
 
+      # Use Python 3.10 (very stable with PyInstaller + pandas)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install runtime/build dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy openpyxl pyinstaller
+          pip install "pandas==2.2.2" "numpy==1.26.4" "openpyxl==3.1.5" "pyinstaller==6.6.0"
+
+      - name: Quick import check (helps catch missing wheels early)
+        run: |
+          python -c "import pandas, numpy, openpyxl, tkinter; print('Imports OK')"
 
       - name: Build one-file EXE (windowed)
         shell: cmd
         run: |
-          py -3 -m PyInstaller --noconfirm --clean ^
+          python -m PyInstaller --noconfirm --clean ^
             --name "%EXE_NAME%" ^
             --windowed ^
             --onefile ^
+            --hidden-import tkinter ^
+            --hidden-import tkinter.ttk ^
             --collect-all pandas ^
             --collect-all numpy ^
             "%SCRIPT_FILE%"
