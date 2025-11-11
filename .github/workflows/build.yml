@@ -1,0 +1,81 @@
+name: Build BOM Creation Tool EXE
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]    # Push a tag like v1.0.0 to publish a Release
+  workflow_dispatch:
+
+env:
+  SCRIPT_FILE: "BOM Creation Tool_V8 (1).py"
+  EXE_NAME: "BOM Creation Tool"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify script exists
+        shell: bash
+        run: |
+          test -f "$SCRIPT_FILE" || (echo "Missing script: $SCRIPT_FILE" && exit 1)
+          echo "Found script: $SCRIPT_FILE"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build one-file EXE (windowed)
+        shell: cmd
+        run: |
+          py -3 -m PyInstaller --noconfirm --clean ^
+            --name "%EXE_NAME%" ^
+            --windowed ^
+            --onefile ^
+            --collect-all pandas ^
+            --collect-all numpy ^
+            "%SCRIPT_FILE%"
+
+      # ---------- Optional code signing (only runs if secrets are set) ----------
+      - name: Decode code-sign certificate
+        if: ${{ secrets.CODE_SIGN_PFX != '' && secrets.CODE_SIGN_PFX_PASSWORD != '' }}
+        shell: powershell
+        run: |
+          $bytes = [System.Convert]::FromBase64String("${{ secrets.CODE_SIGN_PFX }}")
+          [IO.File]::WriteAllBytes("codesign.pfx", $bytes)
+
+      - name: Sign EXE
+        if: ${{ secrets.CODE_SIGN_PFX != '' && secrets.CODE_SIGN_PFX_PASSWORD != '' }}
+        shell: powershell
+        run: |
+          $exe = "dist/${{ env.EXE_NAME }}.exe"
+          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign `
+            /f "codesign.pfx" /p "${{ secrets.CODE_SIGN_PFX_PASSWORD }}" `
+            /tr http://timestamp.digicert.com /td sha256 `
+            "$exe"
+      # --------------------------------------------------------------------------
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BOM-Creation-Tool-EXE
+          path: dist/${{ env.EXE_NAME }}.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release (for tagged builds)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/${{ env.EXE_NAME }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
