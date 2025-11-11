@@ -3,8 +3,8 @@ name: Build BOM Creation Tool EXE
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]          # Push a tag like v1.0.0 to publish a Release
-  workflow_dispatch:        # Allows manual "Run workflow"
+    tags: [ 'v*' ]
+  workflow_dispatch:
 
 env:
   SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"   # <-- your exact script filename
@@ -44,25 +44,6 @@ jobs:
             --collect-all pandas ^
             --collect-all numpy ^
             "%SCRIPT_FILE%"
-
-      # ---------- Optional code signing (only runs if secrets are set) ----------
-      - name: Decode code-sign certificate
-        if: ${{ secrets.CODE_SIGN_PFX != '' && secrets.CODE_SIGN_PFX_PASSWORD != '' }}
-        shell: powershell
-        run: |
-          $bytes = [System.Convert]::FromBase64String("${{ secrets.CODE_SIGN_PFX }}")
-          [IO.File]::WriteAllBytes("codesign.pfx", $bytes)
-
-      - name: Sign EXE
-        if: ${{ secrets.CODE_SIGN_PFX != '' && secrets.CODE_SIGN_PFX_PASSWORD != '' }}
-        shell: powershell
-        run: |
-          $exe = "dist/${{ env.EXE_NAME }}.exe"
-          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" sign `
-            /f "codesign.pfx" /p "${{ secrets.CODE_SIGN_PFX_PASSWORD }}" `
-            /tr http://timestamp.digicert.com /td sha256 `
-            "$exe"
-      # --------------------------------------------------------------------------
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
