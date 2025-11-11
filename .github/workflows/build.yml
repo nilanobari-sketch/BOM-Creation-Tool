@@ -29,10 +29,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install build tools
+      - name: Install runtime/build dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
+          pip install pandas numpy openpyxl pyinstaller
 
       - name: Build one-file EXE (windowed)
         shell: cmd
