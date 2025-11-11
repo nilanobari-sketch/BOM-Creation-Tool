@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  SCRIPT_FILE: "BOM Creation Tool_V8 (1).py"
+  SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"
   EXE_NAME: "BOM Creation Tool"
 
 jobs:
