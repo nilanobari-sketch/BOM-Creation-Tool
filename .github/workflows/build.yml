@@ -3,11 +3,11 @@ name: Build BOM Creation Tool EXE
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]    # Push a tag like v1.0.0 to publish a Release
-  workflow_dispatch:
+    tags: [ 'v*' ]          # Push a tag like v1.0.0 to publish a Release
+  workflow_dispatch:        # Allows manual "Run workflow"
 
 env:
-  SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"
+  SCRIPT_FILE: "BOM Creation Tool_V8 (2).py"   # <-- your exact script filename
   EXE_NAME: "BOM Creation Tool"
 
 jobs:
